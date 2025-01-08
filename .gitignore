@@ -1,0 +1,5 @@
+# Ignore all .tf files in the tform directory
+tform/*.tf
+
+# Exclude main.tf from being ignored
+!tform/main.tf

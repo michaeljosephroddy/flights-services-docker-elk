@@ -1,0 +1,4 @@
+com/tus/flight/FlightservicesApplication.class
+com/tus/flight/model/Flight.class
+com/tus/flight/controller/FlightController.class
+com/tus/flight/repo/FlightRepository.class
