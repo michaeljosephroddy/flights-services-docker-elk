@@ -32,7 +32,7 @@ Docker Swarm is a native clustering solution for Docker that turns a pool of Doc
 
 To demonstrate docker swarm, we will set up 3 EC2 instances and deploy the `docker-compose.yml` file from the previous section.
 I used Terraform to set up EC2 instead of manually configuring each instance in the console.
-Take a look at `tform/main.tf`.
+Take a look at `main.tf`.
 
 Prepare the wokring directory: `terraform init`
 Run: `terraform plan`

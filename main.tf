@@ -111,10 +111,7 @@ resource "aws_instance" "manager" {
               sudo systemctl start docker
               sudo systemctl enable docker
               sudo usermod -aG docker ubuntu
-              wget https://michaelss3bucket.s3.eu-west-1.amazonaws.com/containers-assignment2/docker-compose.yml
-              wget https://michaelss3bucket.s3.eu-west-1.amazonaws.com/containers-assignment2/flightservices-0.0.1-SNAPSHOT.jar
-              wget https://michaelss3bucket.s3.eu-west-1.amazonaws.com/containers-assignment2/init.sql
-              wget https://michaelss3bucket.s3.eu-west-1.amazonaws.com/containers-assignment2/logstash.conf
+
               mkdir logs
               touch logs/application.log
               EOF
