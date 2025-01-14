@@ -1,55 +1,110 @@
-## Flightservice Deployment
+**Flightservice Deployment Documentation**
 
-Microservices architecture is a software development approach where an application is broken down into small, independent services. Each service is responsible for a specific business function and can be developed, deployed, and scaled independently. This approach offers several benefits, including improved scalability, maintainability, and resilience.
-Containerization, through technologies like Docker, provides a lightweight and portable way to package and run applications and their dependencies. Containers isolate applications from the underlying host system, ensuring consistent behavior across different environments.
-Container orchestration tools play a crucial role in managing and scaling microservices deployed in containerized environments. These tools automate tasks such as deployment, scaling, load balancing, and service discovery, making it easier to manage and maintain complex microservices architectures.
+### Microservices Architecture Overview
+Microservices architecture is a software development approach that breaks an application into small, independent services. Each service handles a specific business function and can be developed, deployed, and scaled independently. This approach offers several benefits:
+
+- **Improved Scalability:** Each service can be scaled independently based on demand.
+- **Enhanced Maintainability:** Small, modular services are easier to update and debug.
+- **Increased Resilience:** Failures in one service are less likely to affect the entire system.
+
+### Containerization and Orchestration
+Containerization, enabled by tools like Docker, provides a lightweight and portable way to package applications and their dependencies. Containers ensure consistent behavior across environments by isolating applications from the underlying host system.
+
+To manage and scale containerized microservices, orchestration tools automate tasks such as:
+
+- **Deployment**
+- **Scaling**
+- **Load Balancing**
+- **Service Discovery**
+
+These tools simplify the management of complex microservices architectures.
+
+---
 
 ### Docker Compose Deployment
+Docker Compose is a tool for defining and running multi-container Docker applications using a YAML configuration file. This file specifies the services, dependencies, and configurations required for the application.
 
-Docker Compose is a tool for defining and running multi-container Docker applications. It uses a YAML file to define the services that make up an application, their dependencies, and their configuration.
+#### Deployment Steps
+1. **Define the Docker Compose File:**
+   - The `docker-compose.yml` includes the configuration for a Java microservice, MySQL database, and the ELK stack.
 
-To demonstrate docker compose we will deploy docker containers using a `docker-compose.yml` file.
-I have defined the java microservice, mysql and the ELK stack in the `docker-compose.yml`.
+2. **Dependencies:**
+   - The following files are required:
+     - `init.sql`  
+     - `logstash.conf`
+     - `flightservices.jar`
 
-There are some dependencies for this docker-compose.yml file like:
+3. **Run the Containers:**
+   ```bash
+   sudo docker-compose up --build
+   ```
+   - This command launches the containers locally.
 
-`init.sql`
-`logstash.conf`
-`flightservices.jar file.`
+4. **Test the Application:**
+   - Call the `/flights` endpoint:
+     ```bash
+     curl http://localhost:8080/flights/
+     ```
+   - The Java microservice logs entries to `logs/application.log` using SLF4J.
 
-To start up the containers with docker-compose run: `sudo docker-compose up –build`.
-This will launch the containers locally.
-Once the containers are up and running we can start calling the `/flights` endpoint.
+5. **Log Management:**
+   - Logstash collects log entries and sends them to Elasticsearch for indexing.
+   - Use Kibana to monitor logs at:
+     ```
+     http://localhost:5601
+     ```
 
-I set the java microservice to log to `logs/application.log` file using SLF4J.
-After calling the `/flights` endpoint with `curl  http://localhost:8080/flights/`, the java code will put an entry in the log file.
+---
 
-Logstash will collect the log file entries and send them over to elasticsearch for indexing and we can monitor the logs in Kibana at `http://localhost:5601`.
+### Docker Swarm Deployment
+Docker Swarm is a native clustering solution for Docker, allowing you to manage and scale applications across a cluster of machines. It turns a pool of Docker hosts into a single, virtual Docker host.
 
-### Docker Swarm
+#### Deployment Steps
+1. **Setup Infrastructure:**
+   - Use Terraform to provision three EC2 instances, see `main.tf`:
+     ```bash
+     terraform init
+     terraform plan
+     terraform apply
+     ```
 
-Docker Swarm is a native clustering solution for Docker that turns a pool of Docker hosts into a single, virtual Docker host. It provides a simple way to manage and scale Docker applications across a cluster of machines.
+2. **Initialize Docker Swarm:**
+   - SSH into the manager node and run:
+     ```bash
+     docker swarm init
+     ```
+   - Copy the join key generated by the command.
 
-To demonstrate docker swarm, we will set up 3 EC2 instances and deploy the `docker-compose.yml` file from the previous section.
-I used Terraform to set up EC2 instead of manually configuring each instance in the console.
-Take a look at `main.tf`.
+3. **Join Worker Nodes:**
+   - SSH into each worker node and use the join key:
+     ```bash
+     docker swarm join --token <WORKER_TOKEN> <MANAGER_IP>:2377
+     ```
 
-Prepare the wokring directory: `terraform init`
-Run: `terraform plan`
-followed by: `terraform apply`.
+4. **Deploy the Application:**
+   - On the manager node, deploy the stack:
+     ```bash
+     docker stack deploy -c docker-compose.yml <stack_name>
+     ```
 
-From here we can set up docker swarm by sshing into the manager node and running `docker swarm init`, then taking the join key and sshing into the worker nodes and joining the worker nodes to the swarm by using the join key.
+5. **Scale Services:**
+   - Adjust replicas as needed:
+     ```bash
+     docker service scale <stack_name>_<service_name>=<number_of_replicas>
+     ```
 
-The command is, `docker swarm join --token <WORKER_TOKEN> <MANAGER_IP>:2377`.
+6. **Update Services:**
+   - Update a service to a new version:
+     ```bash
+     docker service update --image <image_name> <stack_name>
+     ```
+   - Rollback to a previous version if needed:
+     ```bash
+     docker service rollback <stack_name>
+     ```
 
-Then we can run, `docker stack deploy` on the manager node, using the `docker-compose.yml`.
+#### Benefits of Docker Swarm
+- **Simplified Scaling:** Easily scale services across a cluster of machines.
+- **High Availability:** Distribute services across multiple nodes to ensure resilience.
+- **Native Integration:** Seamlessly integrates with Docker tools and workflows.
 
-To scale the services you can run: `docker service scale <stack_name>_<service_name>=<number_of_replicas>`.
-If you want to update a service to a more recent version, you can run: `docker service update –image <image_name> <stack_name>`.
-If for instance something goes wrong after updating you can rollback to the previous version using: `docker service rollback <image_name>`.
-
-Docker Swarm offers several advantages for microservices deployment:
-
-1. Simplified scaling: Easily scale services across a cluster of machines.
-2. High availability: Ensure high availability of services by distributing them across multiple nodes.
-3. Native integration with Docker: Seamlessly integrates with the Docker ecosystem.
